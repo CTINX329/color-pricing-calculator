@@ -188,7 +188,6 @@
         .base-cost {
             font-size: 18px;
             font-weight: 600;
-            color: #e74c3c;
             text-align: center;
             margin: 10px 0;
             cursor: pointer;
@@ -198,6 +197,7 @@
             user-select: none;
             border: 1px solid #e9ecef;
             background-color: #f8f9fa;
+            color: #6c757d;
         }
 
         .base-cost:hover {
@@ -205,20 +205,29 @@
             border-color: #667eea;
         }
 
-        /* Hidden by default */
+        /* Base costs are hidden by default */
         .base-cost .base-cost-content {
             display: none;
         }
 
-        /* Show when revealed */
-        .base-cost.revealed .base-cost-content {
-            display: inline;
-        }
-
         .base-cost .hidden-text {
+            display: block;
             color: #6c757d;
             font-style: italic;
             font-size: 14px;
+            font-weight: normal;
+        }
+
+        /* Show when revealed */
+        .base-cost.revealed {
+            color: #e74c3c;
+            background-color: #fff5f5;
+            border-color: #e74c3c;
+        }
+
+        .base-cost.revealed .base-cost-content {
+            display: block;
+            color: #e74c3c;
         }
 
         .base-cost.revealed .hidden-text {
