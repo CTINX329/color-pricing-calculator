@@ -1,6 +1,6 @@
 {
   "paper": {
-    "extender": 1.61,
+    "extender": 2.00,
     "black": 1.48,
     "green": 4.04,
     "processBlue": 2.78,
@@ -14,7 +14,7 @@
     "reflex": 3.25
   },
   "direct": {
-    "extender": 2.04,
+    "extender": 2.25,
     "black": 1.8,
     "green": 3.83,
     "processBlue": 2.86,
