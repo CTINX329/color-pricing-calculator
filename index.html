@@ -937,16 +937,22 @@
                     <div class="bcm-section">
                         <div class="bcm-title">${bcm} BCM Volume</div>
                         <div class="base-cost" onclick="toggleBaseCost(this)">
-                            <span class="hidden-text">Click to show base cost</span>
-                            <span class="base-cost-content">Base Cost: $${bcmAdjustedCost.toFixed(4)}</span>
+                            <span class="hidden-text">Click to show base costs</span>
+                            <span class="base-cost-content">
+                                Base Cost: ${bcmAdjustedCost.toFixed(4)}
+                                ${containerMultipliers.slice(0, 1).map(container => {
+                                    const finalPrice = bcmAdjustedCost * container.multiplier;
+                                    return `<br/>${container.name}: ${finalPrice.toFixed(2)}`;
+                                }).join('')}
+                            </span>
                         </div>
                         <div class="container-prices">
-                            ${containerMultipliers.map(container => {
+                            ${containerMultipliers.slice(1).map(container => {
                                 const finalPrice = bcmAdjustedCost * container.multiplier;
                                 return `
                                     <div class="container-row">
                                         <span class="container-name">${container.name}</span>
-                                        <span class="container-price">$${finalPrice.toFixed(2)}</span>
+                                        <span class="container-price">${finalPrice.toFixed(2)}</span>
                                     </div>
                                 `;
                             }).join('')}
