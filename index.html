@@ -388,77 +388,137 @@
 
     <script>
         let recipes = [];
-        let componentPrices = {
-            paper: {
-                extender: 1.61,
-                black: 1.48,
-                green: 4.04,
-                processBlue: 2.78,
-                purple: 11.81,
-                rhodamine: 10.72,
-                rubine: 3.25,
-                violet: 4.56,
-                warmRed: 3.21,
-                yellow: 2.58,
-                transWhite: 1.61,
-                reflex: 3.25
-            },
-            direct: {
-                extender: 2.04,
-                black: 1.8,
-                green: 3.83,
-                processBlue: 2.86,
-                purple: 10.12,
-                rhodamine: 9.23,
-                rubine: 3.11,
-                violet: 4.27,
-                warmRed: 3.18,
-                yellow: 2.63,
-                transWhite: 2.04,
-                reflex: 3.11
-            }
-        };
+        let componentPrices = {};
+        let containerMultipliers = [];
+        let bcmFactors = {};
 
-        // Auto-load Excel file on page load
-        window.addEventListener('load', autoLoadExcelFile);
+        // Auto-load Excel file and JSON data on page load
+        window.addEventListener('load', loadAllData);
 
-        async function autoLoadExcelFile() {
+        async function loadAllData() {
             const status = document.getElementById('status');
             const uploadSection = document.getElementById('uploadSection');
             const calculatorForm = document.getElementById('calculatorForm');
 
             try {
-                // Try to fetch the Excel file from the same directory
-                const response = await fetch('./Recipe Formula Price Estimation.xlsm');
-                
-                if (!response.ok) {
+                status.className = 'status loading';
+                status.innerHTML = '<div class="spinner"></div>Loading data files...';
+
+                // Load all data files in parallel
+                const [excelResponse, pricesResponse, containersResponse, bcmResponse] = await Promise.all([
+                    fetch('./Recipe Formula Price Estimation.xlsm'),
+                    fetch('./component-prices.json'),
+                    fetch('./container-multipliers.json'),
+                    fetch('./bcm-factors.json')
+                ]);
+
+                // Check if Excel file exists
+                if (!excelResponse.ok) {
                     throw new Error('Excel file not found');
                 }
 
-                const arrayBuffer = await response.arrayBuffer();
+                // Load JSON files (with fallbacks if they don't exist)
+                if (pricesResponse.ok) {
+                    componentPrices = await pricesResponse.json();
+                } else {
+                    // Fallback to default pricing
+                    componentPrices = getDefaultComponentPrices();
+                }
+
+                if (containersResponse.ok) {
+                    containerMultipliers = await containersResponse.json();
+                } else {
+                    // Fallback to default containers
+                    containerMultipliers = getDefaultContainers();
+                }
+
+                if (bcmResponse.ok) {
+                    bcmFactors = await bcmResponse.json();
+                } else {
+                    // Fallback to default BCM factors
+                    bcmFactors = getDefaultBcmFactors();
+                }
+
+                // Process Excel file
+                const arrayBuffer = await excelResponse.arrayBuffer();
                 const workbook = XLSX.read(arrayBuffer, { type: 'array' });
                 
-                // Process the Excel file
                 await processExcelFile(workbook);
                 
                 // Show success status
                 status.className = 'status success';
-                status.innerHTML = `✅ Successfully loaded ${recipes.length} recipes from database`;
+                status.innerHTML = `✅ Successfully loaded ${recipes.length} recipes and pricing data`;
                 
                 // Show calculator form
                 calculatorForm.style.display = 'block';
                 
             } catch (error) {
-                console.error('Auto-load failed:', error);
+                console.error('Data loading failed:', error);
                 
                 // Show manual upload option
                 status.className = 'status error';
                 status.innerHTML = `❌ Auto-load failed: ${error.message}`;
                 uploadSection.style.display = 'block';
                 
+                // Load fallback data
+                componentPrices = getDefaultComponentPrices();
+                containerMultipliers = getDefaultContainers();
+                bcmFactors = getDefaultBcmFactors();
+                
                 // Set up manual upload
                 setupManualUpload();
             }
+        }
+
+        function getDefaultComponentPrices() {
+            return {
+                paper: {
+                    extender: 1.61,
+                    black: 1.48,
+                    green: 4.04,
+                    processBlue: 2.78,
+                    purple: 11.81,
+                    rhodamine: 10.72,
+                    rubine: 3.25,
+                    violet: 4.56,
+                    warmRed: 3.21,
+                    yellow: 2.58,
+                    transWhite: 1.61,
+                    reflex: 3.25
+                },
+                direct: {
+                    extender: 2.04,
+                    black: 1.8,
+                    green: 3.83,
+                    processBlue: 2.86,
+                    purple: 10.12,
+                    rhodamine: 9.23,
+                    rubine: 3.11,
+                    violet: 4.27,
+                    warmRed: 3.18,
+                    yellow: 2.63,
+                    transWhite: 2.04,
+                    reflex: 3.11
+                }
+            };
+        }
+
+        function getDefaultContainers() {
+            return [
+                { name: 'Loss Leader', multiplier: 1.8 },
+                { name: 'Drum', multiplier: 2.2 },
+                { name: 'Pail', multiplier: 2.4 },
+                { name: 'Gallon', multiplier: 2.6 }
+            ];
+        }
+
+        function getDefaultBcmFactors() {
+            return {
+                2: 1.0,
+                3: 0.98,
+                4: 0.96,
+                5: 0.95
+            };
         }
 
         function setupManualUpload() {
@@ -705,36 +765,23 @@
         function showAllPricing(data) {
             const resultsDiv = document.getElementById('results');
             
-            const bcmFactors = {
-                2: 1.0,
-                3: 0.98,
-                4: 0.96,
-                5: 0.95
-            };
-            
-            const containers = [
-                { name: 'Loss Leader', multiplier: 1.8 },
-                { name: 'Drum', multiplier: 2.2 },
-                { name: 'Pail', multiplier: 2.4 },
-                { name: 'Gallon', multiplier: 2.6 }
-            ];
-            
+            // Generate pricing grid for all BCM volumes
             let pricingGridHTML = '';
             
-            [2, 3, 4, 5].forEach(bcm => {
+            Object.keys(bcmFactors).forEach(bcm => {
                 const bcmAdjustedCost = data.formulaCost * bcmFactors[bcm];
                 
                 pricingGridHTML += `
                     <div class="bcm-section">
                         <div class="bcm-title">${bcm} BCM Volume</div>
-                        <div class="base-cost">Base Cost: $${bcmAdjustedCost.toFixed(4)}</div>
+                        <div class="base-cost">Base Cost: ${bcmAdjustedCost.toFixed(4)}</div>
                         <div class="container-prices">
-                            ${containers.map(container => {
+                            ${containerMultipliers.map(container => {
                                 const finalPrice = bcmAdjustedCost * container.multiplier;
                                 return `
                                     <div class="container-row">
                                         <span class="container-name">${container.name}</span>
-                                        <span class="container-price">$${finalPrice.toFixed(2)}</span>
+                                        <span class="container-price">${finalPrice.toFixed(2)}</span>
                                     </div>
                                 `;
                             }).join('')}
@@ -746,13 +793,13 @@
             resultsDiv.innerHTML = `
                 <div class="formula-info">
                     <h3>Recipe ${data.recipe.code} - ${data.pricingSeries}</h3>
-                    <div class="base-cost">Formula Base Cost: $${data.formulaCost.toFixed(4)}</div>
+                    <div class="base-cost">Formula Base Cost: ${data.formulaCost.toFixed(4)}</div>
                     <div class="formula-breakdown">
                         <h4>Component Breakdown:</h4>
                         ${data.componentBreakdown.map(comp => `
                             <div class="component-row">
                                 <span class="component-name">${comp.name} (${comp.percentage}%)</span>
-                                <span class="component-amount">$${comp.price} × ${comp.percentage}% = $${comp.cost.toFixed(4)}</span>
+                                <span class="component-amount">${comp.price} × ${comp.percentage}% = ${comp.cost.toFixed(4)}</span>
                             </div>
                         `).join('')}
                     </div>
