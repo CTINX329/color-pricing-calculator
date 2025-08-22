@@ -969,8 +969,8 @@
                         <h4>Component Breakdown:</h4>
                         ${data.componentBreakdown.map(comp => `
                             <div class="component-row">
-                                <span class="component-name">${comp.name} (${comp.percentage}%)</span>
-                                <span class="component-amount">$${comp.price.toFixed(2)} × ${comp.percentage}% = $${comp.cost.toFixed(4)}</span>
+                                <span class="component-name">${comp.name}</span>
+                                <span class="component-amount">${comp.percentage}%</span>
                             </div>
                         `).join('')}
                     </div>
