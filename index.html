@@ -214,7 +214,7 @@
 
         /* Show when revealed */
         .base-cost.revealed .base-cost-content {
-            display: inline;
+            display: block;
         }
 
         .base-cost .hidden-text {
@@ -454,6 +454,39 @@
         .file-input {
             display: none;
         }
+
+        .bcm-adjustment-settings {
+            background: #f0f8ff;
+            border: 1px solid #74b9ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .bcm-adjustment-settings h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .adjustment-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px 0;
+            font-size: 13px;
+        }
+
+        .adjustment-input label {
+            flex: 1;
+            margin: 0;
+        }
+
+        .adjustment-input input {
+            width: 80px;
+            padding: 5px;
+            font-size: 13px;
+        }
     </style>
 </head>
 <body>
@@ -551,7 +584,7 @@
         let recipes = [];
         let componentPrices = {};
         let containerMultipliers = [];
-        let bcmFactors = {};
+        let bcmAdjustments = {};
         let allCostsRevealed = false;
 
         async function loadAllData() {
@@ -568,7 +601,7 @@
                     fetch('./Recipe Formula Price Estimation.xlsm'),
                     fetch('./component-prices.json'),
                     fetch('./container-multipliers.json'),
-                    fetch('./bcm-factors.json')
+                    fetch('./bcm-adjustments.json').catch(() => null)
                 ]);
 
                 // Check if Excel file exists
@@ -591,11 +624,12 @@
                     containerMultipliers = getDefaultContainers();
                 }
 
-                if (bcmResponse.ok) {
-                    bcmFactors = await bcmResponse.json();
+                // Load BCM adjustments (new file) or use defaults
+                if (bcmResponse && bcmResponse.ok) {
+                    bcmAdjustments = await bcmResponse.json();
                 } else {
-                    // Fallback to default BCM factors
-                    bcmFactors = getDefaultBcmFactors();
+                    // Default BCM adjustments (percentage reduction from 2BCM baseline)
+                    bcmAdjustments = getDefaultBcmAdjustments();
                 }
 
                 // Process Excel file
@@ -622,7 +656,7 @@
                 // Load fallback data
                 componentPrices = getDefaultComponentPrices();
                 containerMultipliers = getDefaultContainers();
-                bcmFactors = getDefaultBcmFactors();
+                bcmAdjustments = getDefaultBcmAdjustments();
                 
                 // Set up manual upload
                 setupManualUpload();
@@ -664,19 +698,20 @@
 
         function getDefaultContainers() {
             return [
-                { name: 'Loss Leader', multiplier: 1.8 },
+                { name: 'Standard', multiplier: 1.8 },
                 { name: 'Drum', multiplier: 2.2 },
                 { name: 'Pail', multiplier: 2.4 },
                 { name: 'Gallon', multiplier: 2.6 }
             ];
         }
 
-        function getDefaultBcmFactors() {
+        function getDefaultBcmAdjustments() {
+            // Percentage of pigments to keep (100% = no reduction)
             return {
-                2: 1.0,
-                3: 0.98,
-                4: 0.96,
-                5: 0.95
+                "2": 100,  // 2BCM = 100% (baseline, no reduction)
+                "3": 85,   // 3BCM = 85% of pigments (15% reduction)
+                "4": 70,   // 4BCM = 70% of pigments (30% reduction)  
+                "5": 60    // 5BCM = 60% of pigments (40% reduction)
             };
         }
 
@@ -828,6 +863,78 @@
             });
         }
 
+        // Adjust formula based on BCM level
+        function adjustFormulaForBCM(originalComponents, bcmLevel, pricingSeries) {
+            const adjustmentPercentage = bcmAdjustments[bcmLevel] || 100;
+            const adjustedComponents = {};
+            
+            // If it's already at 100% (2BCM), return original
+            if (adjustmentPercentage === 100) {
+                return originalComponents;
+            }
+            
+            // Calculate the reduction multiplier
+            const multiplier = adjustmentPercentage / 100;
+            
+            // Check if formula already has extender
+            const hasExtender = originalComponents.extender || originalComponents.transWhite;
+            let totalReduction = 0;
+            
+            // Reduce all non-extender components
+            for (const [component, percentage] of Object.entries(originalComponents)) {
+                if (component !== 'extender' && component !== 'transWhite') {
+                    const newPercentage = percentage * multiplier;
+                    adjustedComponents[component] = newPercentage;
+                    totalReduction += (percentage - newPercentage);
+                } else {
+                    // Keep extender/transWhite for now
+                    adjustedComponents[component] = percentage;
+                }
+            }
+            
+            // Add the reduction amount to extender/transWhite
+            if (hasExtender) {
+                // Add to existing extender
+                if (adjustedComponents.extender) {
+                    adjustedComponents.extender += totalReduction;
+                } else if (adjustedComponents.transWhite) {
+                    adjustedComponents.transWhite += totalReduction;
+                }
+            } else {
+                // Add new extender
+                adjustedComponents.extender = totalReduction;
+            }
+            
+            // Verify total is still 100%
+            const total = Object.values(adjustedComponents).reduce((sum, val) => sum + val, 0);
+            console.log(`BCM ${bcmLevel} adjustment: Total = ${total}%`, adjustedComponents);
+            
+            return adjustedComponents;
+        }
+
+        // Calculate formula cost
+        function calculateFormulaCost(components, pricingSeries) {
+            const prices = componentPrices[pricingSeries];
+            let cost = 0;
+            const breakdown = [];
+            
+            for (const [component, percentage] of Object.entries(components)) {
+                const componentPrice = prices[component];
+                if (componentPrice !== undefined) {
+                    const componentCost = (percentage / 100) * componentPrice;
+                    cost += componentCost;
+                    breakdown.push({
+                        name: component,
+                        percentage: percentage.toFixed(1),
+                        price: componentPrice,
+                        cost: componentCost
+                    });
+                }
+            }
+            
+            return { cost, breakdown };
+        }
+
         // Search functionality
         document.getElementById('hueCode').addEventListener('input', function() {
             const searchValue = this.value.toLowerCase();
@@ -895,32 +1002,20 @@
                 return;
             }
             
-            const prices = componentPrices[pricingSeries];
-            let formulaCost = 0;
-            const componentBreakdown = [];
-            
-            for (const [component, percentage] of Object.entries(recipe.components)) {
-                const componentPrice = prices[component];
-                if (componentPrice !== undefined) {
-                    const cost = (percentage / 100) * componentPrice;
-                    formulaCost += cost;
-                    componentBreakdown.push({
-                        name: component,
-                        percentage: percentage,
-                        price: componentPrice,
-                        cost: cost
-                    });
-                }
-            }
+            // Calculate base formula cost (2BCM)
+            const baseFormula = adjustFormulaForBCM(recipe.components, "2", pricingSeries);
+            const baseCalc = calculateFormulaCost(baseFormula, pricingSeries);
             
             // Reset the toggle state for new results
             allCostsRevealed = false;
             
             showAllPricing({
                 recipe: recipe,
-                formulaCost: formulaCost,
-                componentBreakdown: componentBreakdown,
-                pricingSeries: pricingSeries === 'paper' ? 'Paper Series' : 'Direct/Indirect'
+                baseFormula: baseFormula,
+                baseCost: baseCalc.cost,
+                baseBreakdown: baseCalc.breakdown,
+                pricingSeries: pricingSeries === 'paper' ? 'Paper Series' : 'Direct/Indirect',
+                seriesKey: pricingSeries
             });
         }
 
@@ -930,29 +1025,35 @@
             // Generate pricing grid for all BCM volumes
             let pricingGridHTML = '';
             
-            Object.keys(bcmFactors).forEach(bcm => {
-                const bcmAdjustedCost = data.formulaCost * bcmFactors[bcm];
+            Object.keys(bcmAdjustments).forEach(bcm => {
+                // Adjust formula for this BCM level
+                const adjustedFormula = adjustFormulaForBCM(data.recipe.components, bcm, data.seriesKey);
+                const calc = calculateFormulaCost(adjustedFormula, data.seriesKey);
                 
                 pricingGridHTML += `
                     <div class="bcm-section">
                         <div class="bcm-title">${bcm} BCM Volume</div>
                         <div class="base-cost" onclick="toggleBaseCost(this)">
                             <span class="hidden-text">Click to show base costs</span>
-                            <span class="base-cost-content">
-                                Base Cost: ${bcmAdjustedCost.toFixed(4)}
+                            <div class="base-cost-content">
+                                <div style="margin-bottom: 10px;">
+                                    <strong>Formula (${bcm} BCM):</strong><br/>
+                                    ${calc.breakdown.map(c => `${c.name}: ${c.percentage}%`).join(', ')}
+                                </div>
+                                <div>Base Cost: $${calc.cost.toFixed(4)}</div>
                                 ${containerMultipliers.slice(0, 1).map(container => {
-                                    const finalPrice = bcmAdjustedCost * container.multiplier;
-                                    return `<br/>${container.name}: ${finalPrice.toFixed(2)}`;
+                                    const finalPrice = calc.cost * container.multiplier;
+                                    return `<div>${container.name}: $${finalPrice.toFixed(2)}</div>`;
                                 }).join('')}
-                            </span>
+                            </div>
                         </div>
                         <div class="container-prices">
                             ${containerMultipliers.slice(1).map(container => {
-                                const finalPrice = bcmAdjustedCost * container.multiplier;
+                                const finalPrice = calc.cost * container.multiplier;
                                 return `
                                     <div class="container-row">
                                         <span class="container-name">${container.name}</span>
-                                        <span class="container-price">${finalPrice.toFixed(2)}</span>
+                                        <span class="container-price">$${finalPrice.toFixed(2)}</span>
                                     </div>
                                 `;
                             }).join('')}
@@ -967,13 +1068,9 @@
                     <button class="toggle-all-btn" onclick="toggleAllBaseCosts()">
                         <span id="toggleBtnText">Show All Base Costs</span>
                     </button>
-                    <div class="base-cost" onclick="toggleBaseCost(this)">
-                        <span class="hidden-text">Click to show formula base cost</span>
-                        <span class="base-cost-content">Formula Base Cost: $${data.formulaCost.toFixed(4)}</span>
-                    </div>
                     <div class="formula-breakdown">
-                        <h4>Component Breakdown:</h4>
-                        ${data.componentBreakdown.map(comp => `
+                        <h4>Original Formula (2 BCM):</h4>
+                        ${data.baseBreakdown.map(comp => `
                             <div class="component-row">
                                 <span class="component-name">${comp.name}</span>
                                 <span class="component-amount">${comp.percentage}%</span>
