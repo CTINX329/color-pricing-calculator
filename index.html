@@ -191,6 +191,85 @@
             color: #e74c3c;
             text-align: center;
             margin: 10px 0;
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.2s ease;
+            user-select: none;
+        }
+
+        .base-cost:hover {
+            background-color: #f8f9fa;
+        }
+
+        .base-cost .toggle-icon {
+            margin-left: 8px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .base-cost.collapsed .base-cost-content {
+            display: none;
+        }
+
+        .login-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .login-box h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .login-box input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .login-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .login-box button {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .login-error {
+            color: #d63031;
+            margin-top: 10px;
+            font-size: 14px;
         }
 
         .search-results {
@@ -338,7 +417,20 @@
     </style>
 </head>
 <body>
-    <div class="calculator">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-box">
+            <h2>🎨 Color Calculator Access</h2>
+            <p style="color: #7f8c8d; margin-bottom: 20px;">Enter password to access the pricing calculator</p>
+            <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="off">
+            <button onclick="checkPassword()">Access Calculator</button>
+            <div id="loginError" class="login-error" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Main Calculator (hidden until login) -->
+    <div id="mainApp" style="display: none;">
+        <div class="calculator">
         <div class="header">
             <h1>🎨 Color Recipe Price Calculator</h1>
             <p>Pricing calculator with auto-loaded recipe database</p>
@@ -381,19 +473,48 @@
 
         <div id="results" class="results"></div>
         <div id="error" class="error" style="display: none;"></div>
+        </div>
     </div>
+</body>
 
     <!-- Include SheetJS library for Excel reading -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <script>
+        // Password protection
+        const CORRECT_PASSWORD = "colorpro2025"; // Change this to your desired password
+        
+        function checkPassword() {
+            const input = document.getElementById('passwordInput');
+            const error = document.getElementById('loginError');
+            const password = input.value;
+            
+            if (password === CORRECT_PASSWORD) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
+                loadAllData(); // Start loading data after successful login
+            } else {
+                error.textContent = 'Incorrect password. Please try again.';
+                error.style.display = 'block';
+                input.value = '';
+                input.focus();
+            }
+        }
+        
+        // Allow Enter key to submit password
+        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+
         let recipes = [];
         let componentPrices = {};
         let containerMultipliers = [];
         let bcmFactors = {};
 
-        // Auto-load Excel file and JSON data on page load
-        window.addEventListener('load', loadAllData);
+        // Don't auto-load data on page load anymore - wait for login
+        // window.addEventListener('load', loadAllData);
 
         async function loadAllData() {
             const status = document.getElementById('status');
@@ -817,6 +938,16 @@
             const errorDiv = document.getElementById('error');
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
+        }
+
+        function toggleBaseCost(element) {
+            element.classList.toggle('collapsed');
+            const icon = element.querySelector('.toggle-icon');
+            if (element.classList.contains('collapsed')) {
+                icon.textContent = '👁️‍🗨️ Click to show';
+            } else {
+                icon.textContent = '👁️ Click to hide';
+            }
         }
 
         document.addEventListener('click', function(e) {
