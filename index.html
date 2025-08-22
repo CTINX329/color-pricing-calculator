@@ -196,20 +196,29 @@
             border-radius: 5px;
             transition: background-color 0.2s ease;
             user-select: none;
+            border: 1px solid transparent;
         }
 
         .base-cost:hover {
             background-color: #f8f9fa;
+            border-color: #dee2e6;
         }
 
         .base-cost .toggle-icon {
             margin-left: 8px;
-            font-size: 14px;
+            font-size: 12px;
             color: #6c757d;
         }
 
         .base-cost.collapsed .base-cost-content {
             display: none;
+        }
+
+        .base-cost.collapsed::after {
+            content: "Base Cost Hidden";
+            color: #6c757d;
+            font-style: italic;
+            font-size: 14px;
         }
 
         .login-screen {
@@ -942,12 +951,39 @@
 
         function toggleBaseCost(element) {
             element.classList.toggle('collapsed');
+            const content = element.querySelector('.base-cost-content');
             const icon = element.querySelector('.toggle-icon');
+            
             if (element.classList.contains('collapsed')) {
-                icon.textContent = '👁️‍🗨️ Click to show';
+                if (content) content.style.display = 'none';
+                if (icon) icon.textContent = '👁️ Click to show';
             } else {
-                icon.textContent = '👁️ Click to hide';
+                if (content) content.style.display = 'inline';
+                if (icon) icon.textContent = '👁️ Click to hide';
             }
+        }
+
+        // Global function to toggle all base costs at once
+        function toggleAllBaseCosts() {
+            const allBaseCosts = document.querySelectorAll('.base-cost');
+            const firstElement = allBaseCosts[0];
+            const shouldHide = !firstElement.classList.contains('collapsed');
+            
+            allBaseCosts.forEach(element => {
+                if (shouldHide) {
+                    element.classList.add('collapsed');
+                    const content = element.querySelector('.base-cost-content');
+                    const icon = element.querySelector('.toggle-icon');
+                    if (content) content.style.display = 'none';
+                    if (icon) icon.textContent = '👁️ Click to show';
+                } else {
+                    element.classList.remove('collapsed');
+                    const content = element.querySelector('.base-cost-content');
+                    const icon = element.querySelector('.toggle-icon');
+                    if (content) content.style.display = 'inline';
+                    if (icon) icon.textContent = '👁️ Click to hide';
+                }
+            });
         }
 
         document.addEventListener('click', function(e) {
