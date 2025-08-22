@@ -1,18 +1,18 @@
 [
   {
     "name": "Manager Price",
-    "multiplier": 1.5
+    "multiplier": 1.8
   },
   {
     "name": "Drum", 
-    "multiplier": 2.2
+    "multiplier": 2.3
   },
   {
     "name": "Pail",
-    "multiplier": 2.4
+    "multiplier": 2.6
   },
   {
     "name": "Gallon",
-    "multiplier": 2.6
+    "multiplier": 3.0
   }
 ]
