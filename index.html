@@ -72,53 +72,6 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .file-upload {
-            border: 2px dashed #e0e6ed;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .file-upload:hover {
-            border-color: #667eea;
-            background: #f8f9fa;
-        }
-
-        .file-upload.dragover {
-            border-color: #667eea;
-            background: #e3f2fd;
-        }
-
-        .file-upload input[type="file"] {
-            display: none;
-        }
-
-        .file-upload-text {
-            color: #6c757d;
-            font-size: 14px;
-        }
-
-        .file-status {
-            margin-top: 10px;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        .file-status.success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .file-status.error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
         .calculate-btn {
             width: 100%;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -332,28 +285,81 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .status.loading {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .upload-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .upload-btn:hover {
+            background: #218838;
+        }
+
+        .file-input {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="calculator">
         <div class="header">
             <h1>🎨 Color Recipe Price Calculator</h1>
-            <p>Upload your Excel file and estimate pricing based on hue code and ink system</p>
+            <p>Pricing calculator with auto-loaded recipe database</p>
         </div>
 
-        <!-- Excel File Upload -->
-        <div class="form-group">
-            <label for="excelFile">Upload Recipe Excel File</label>
-            <div class="file-upload" onclick="document.getElementById('excelFile').click()">
-                <input type="file" id="excelFile" accept=".xlsx,.xlsm,.xls">
-                <div class="file-upload-text">
-                    📄 Click to upload or drag and drop your Excel file<br>
-                    <small>Supports .xlsx, .xlsm, .xls files</small>
-                </div>
-            </div>
-            <div id="fileStatus" class="file-status" style="display: none;"></div>
+        <!-- Loading/Status Display -->
+        <div id="status" class="status loading">
+            <div class="spinner"></div>
+            Loading recipe database...
         </div>
 
+        <!-- Manual Upload Option (fallback) -->
+        <div id="uploadSection" class="upload-section" style="display: none;">
+            <p><strong>⚠️ Auto-load failed.</strong> Please upload your Excel file manually:</p>
+            <input type="file" id="manualUpload" class="file-input" accept=".xlsx,.xlsm,.xls">
+            <button class="upload-btn" onclick="document.getElementById('manualUpload').click()">
+                📄 Upload Excel File
+            </button>
+        </div>
+
+        <!-- Calculator Form -->
         <form id="calculatorForm" style="display: none;">
             <div class="form-group">
                 <label for="hueCode">Hue Code (Recipe Code)</label>
@@ -372,11 +378,6 @@
 
             <button type="submit" class="calculate-btn">Show All Pricing</button>
         </form>
-
-        <div id="loading" class="loading" style="display: none;">
-            <div class="spinner"></div>
-            Processing Excel file...
-        </div>
 
         <div id="results" class="results"></div>
         <div id="error" class="error" style="display: none;"></div>
@@ -399,8 +400,8 @@
                 violet: 4.56,
                 warmRed: 3.21,
                 yellow: 2.58,
-                transWhite: 1.61, // Using extender price
-                reflex: 3.25 // Using rubine price as fallback
+                transWhite: 1.61,
+                reflex: 3.25
             },
             direct: {
                 extender: 2.04,
@@ -413,80 +414,102 @@
                 violet: 4.27,
                 warmRed: 3.18,
                 yellow: 2.63,
-                transWhite: 2.04, // Using extender price
-                reflex: 3.11 // Using rubine price as fallback
+                transWhite: 2.04,
+                reflex: 3.11
             }
         };
 
-        // File upload handling
-        const fileInput = document.getElementById('excelFile');
-        const fileUpload = document.querySelector('.file-upload');
-        const fileStatus = document.getElementById('fileStatus');
-        const calculatorForm = document.getElementById('calculatorForm');
-        const loading = document.getElementById('loading');
+        // Auto-load Excel file on page load
+        window.addEventListener('load', autoLoadExcelFile);
 
-        fileInput.addEventListener('change', handleFileUpload);
-
-        // Drag and drop functionality
-        fileUpload.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            fileUpload.classList.add('dragover');
-        });
-
-        fileUpload.addEventListener('dragleave', () => {
-            fileUpload.classList.remove('dragover');
-        });
-
-        fileUpload.addEventListener('drop', (e) => {
-            e.preventDefault();
-            fileUpload.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                fileInput.files = files;
-                handleFileUpload();
-            }
-        });
-
-        async function handleFileUpload() {
-            const file = fileInput.files[0];
-            if (!file) return;
-
-            loading.style.display = 'block';
-            fileStatus.style.display = 'none';
-            calculatorForm.style.display = 'none';
+        async function autoLoadExcelFile() {
+            const status = document.getElementById('status');
+            const uploadSection = document.getElementById('uploadSection');
+            const calculatorForm = document.getElementById('calculatorForm');
 
             try {
-                const arrayBuffer = await file.arrayBuffer();
+                // Try to fetch the Excel file from the same directory
+                const response = await fetch('./Recipe Formula Price Estimation.xlsm');
+                
+                if (!response.ok) {
+                    throw new Error('Excel file not found');
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
                 const workbook = XLSX.read(arrayBuffer, { type: 'array' });
                 
-                // Extract recipes from Formulas sheet
-                const formulasSheet = workbook.Sheets['Formulas'];
-                if (!formulasSheet) {
-                    throw new Error('Formulas sheet not found in Excel file');
-                }
-
-                recipes = extractRecipesFromSheet(formulasSheet);
+                // Process the Excel file
+                await processExcelFile(workbook);
                 
-                // Extract pricing from Pricing sheet
-                const pricingSheet = workbook.Sheets['Pricing'];
-                if (pricingSheet) {
-                    updateComponentPricing(pricingSheet);
-                }
-
-                // Show success message
-                fileStatus.className = 'file-status success';
-                fileStatus.textContent = `✅ Loaded ${recipes.length} recipes from ${file.name}`;
-                fileStatus.style.display = 'block';
+                // Show success status
+                status.className = 'status success';
+                status.innerHTML = `✅ Successfully loaded ${recipes.length} recipes from database`;
                 
                 // Show calculator form
                 calculatorForm.style.display = 'block';
                 
             } catch (error) {
-                fileStatus.className = 'file-status error';
-                fileStatus.textContent = `❌ Error reading file: ${error.message}`;
-                fileStatus.style.display = 'block';
-            } finally {
-                loading.style.display = 'none';
+                console.error('Auto-load failed:', error);
+                
+                // Show manual upload option
+                status.className = 'status error';
+                status.innerHTML = `❌ Auto-load failed: ${error.message}`;
+                uploadSection.style.display = 'block';
+                
+                // Set up manual upload
+                setupManualUpload();
+            }
+        }
+
+        function setupManualUpload() {
+            const manualUpload = document.getElementById('manualUpload');
+            manualUpload.addEventListener('change', async function() {
+                const file = this.files[0];
+                if (!file) return;
+
+                const status = document.getElementById('status');
+                const uploadSection = document.getElementById('uploadSection');
+                const calculatorForm = document.getElementById('calculatorForm');
+
+                try {
+                    status.className = 'status loading';
+                    status.innerHTML = '<div class="spinner"></div>Processing uploaded file...';
+                    uploadSection.style.display = 'none';
+
+                    const arrayBuffer = await file.arrayBuffer();
+                    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                    
+                    await processExcelFile(workbook);
+                    
+                    status.className = 'status success';
+                    status.innerHTML = `✅ Successfully loaded ${recipes.length} recipes from ${file.name}`;
+                    calculatorForm.style.display = 'block';
+                    
+                } catch (error) {
+                    status.className = 'status error';
+                    status.innerHTML = `❌ Error processing file: ${error.message}`;
+                    uploadSection.style.display = 'block';
+                }
+            });
+        }
+
+        async function processExcelFile(workbook) {
+            // Extract recipes from Formulas sheet
+            const formulasSheet = workbook.Sheets['Formulas'];
+            if (!formulasSheet) {
+                throw new Error('Formulas sheet not found in Excel file');
+            }
+
+            recipes = extractRecipesFromSheet(formulasSheet);
+            
+            // Extract pricing from Pricing sheet
+            const pricingSheet = workbook.Sheets['Pricing'];
+            if (pricingSheet) {
+                updateComponentPricing(pricingSheet);
+            }
+
+            if (recipes.length === 0) {
+                throw new Error('No valid recipes found in Excel file');
             }
         }
 
@@ -511,7 +534,7 @@
 
             // Get component headers from row 2 (index 1)
             const headers = [];
-            for (let col = 3; col <= 13; col++) { // Columns D through N
+            for (let col = 3; col <= 13; col++) {
                 const cell = sheet[XLSX.utils.encode_cell({r: 1, c: col})];
                 if (cell && cell.v) {
                     headers[col - 3] = componentMapping[cell.v] || cell.v.toLowerCase();
@@ -520,8 +543,8 @@
 
             // Extract recipes starting from row 3 (index 2)
             for (let row = 2; row <= range.e.r; row++) {
-                const recipeCodeCell = sheet[XLSX.utils.encode_cell({r: row, c: 0})]; // Column A
-                const totalCell = sheet[XLSX.utils.encode_cell({r: row, c: 2})]; // Column C
+                const recipeCodeCell = sheet[XLSX.utils.encode_cell({r: row, c: 0})];
+                const totalCell = sheet[XLSX.utils.encode_cell({r: row, c: 2})];
                 
                 if (recipeCodeCell?.v && totalCell?.v === 100) {
                     const recipeCode = recipeCodeCell.v;
@@ -554,7 +577,7 @@
             const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
             
             data.forEach((row, index) => {
-                if (index > 0 && row.length >= 3) { // Skip header row
+                if (index > 0 && row.length >= 3) {
                     const componentName = row[0];
                     const paperPrice = row[1];
                     const directPrice = row[2];
@@ -562,7 +585,6 @@
                     if (componentName && paperPrice && directPrice) {
                         const normalizedName = componentName.toLowerCase().replace(/\s+/g, '');
                         
-                        // Map component names
                         const nameMapping = {
                             'extender': 'extender',
                             'black': 'black',
@@ -595,7 +617,7 @@
             if (searchValue.length > 0 && recipes.length > 0) {
                 const matches = recipes.filter(recipe => 
                     recipe.code.toString().includes(searchValue)
-                ).slice(0, 10); // Limit to 10 results
+                ).slice(0, 10);
                 
                 if (matches.length > 0) {
                     searchResults.innerHTML = `
@@ -635,32 +657,26 @@
             const errorDiv = document.getElementById('error');
             const resultsDiv = document.getElementById('results');
             
-            // Clear previous results and errors
             errorDiv.style.display = 'none';
             resultsDiv.classList.remove('show');
             
-            // Validate inputs
             if (!hueCode || !pricingSeries) {
                 showError('Please select both a hue code and ink system.');
                 return;
             }
 
             if (recipes.length === 0) {
-                showError('Please upload an Excel file first.');
+                showError('Recipe database not loaded. Please refresh the page.');
                 return;
             }
             
-            // Find the recipe
             const recipe = recipes.find(r => r.code.toString() === hueCode.toString());
             if (!recipe) {
-                showError(`Recipe code ${hueCode} not found in the uploaded file.`);
+                showError(`Recipe code ${hueCode} not found in the database.`);
                 return;
             }
             
-            // Get component prices for selected series
             const prices = componentPrices[pricingSeries];
-            
-            // Calculate base formula cost
             let formulaCost = 0;
             const componentBreakdown = [];
             
@@ -675,12 +691,9 @@
                         price: componentPrice,
                         cost: cost
                     });
-                } else {
-                    console.warn(`Price not found for component: ${component}`);
                 }
             }
             
-            // Show all pricing options
             showAllPricing({
                 recipe: recipe,
                 formulaCost: formulaCost,
@@ -692,7 +705,6 @@
         function showAllPricing(data) {
             const resultsDiv = document.getElementById('results');
             
-            // BCM factors and container multipliers
             const bcmFactors = {
                 2: 1.0,
                 3: 0.98,
@@ -707,7 +719,6 @@
                 { name: 'Gallon', multiplier: 2.6 }
             ];
             
-            // Generate pricing grid for all BCM volumes
             let pricingGridHTML = '';
             
             [2, 3, 4, 5].forEach(bcm => {
@@ -761,7 +772,6 @@
             errorDiv.style.display = 'block';
         }
 
-        // Hide search results when clicking outside
         document.addEventListener('click', function(e) {
             if (!e.target.closest('#hueCode') && !e.target.closest('#searchResults')) {
                 document.getElementById('searchResults').style.display = 'none';
