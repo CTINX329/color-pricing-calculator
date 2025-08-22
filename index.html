@@ -185,19 +185,21 @@
             font-size: 16px;
         }
 
+        /* Base cost styles - hidden by default */
         .base-cost {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
+            color: #e74c3c;
             text-align: center;
             margin: 10px 0;
             cursor: pointer;
             padding: 10px;
             border-radius: 5px;
-            transition: background-color 0.2s ease;
+            transition: all 0.2s ease;
             user-select: none;
             border: 1px solid #e9ecef;
             background-color: #f8f9fa;
-            color: #6c757d;
+            position: relative;
         }
 
         .base-cost:hover {
@@ -205,33 +207,49 @@
             border-color: #667eea;
         }
 
-        /* Base costs are hidden by default */
+        /* Hidden by default */
         .base-cost .base-cost-content {
             display: none;
         }
 
+        /* Show when revealed */
+        .base-cost.revealed .base-cost-content {
+            display: inline;
+        }
+
         .base-cost .hidden-text {
-            display: block;
             color: #6c757d;
             font-style: italic;
             font-size: 14px;
-            font-weight: normal;
-        }
-
-        /* Show when revealed */
-        .base-cost.revealed {
-            color: #e74c3c;
-            background-color: #fff5f5;
-            border-color: #e74c3c;
-        }
-
-        .base-cost.revealed .base-cost-content {
-            display: block;
-            color: #e74c3c;
         }
 
         .base-cost.revealed .hidden-text {
             display: none;
+        }
+
+        /* Toggle all button */
+        .toggle-all-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: background-color 0.2s ease;
+        }
+
+        .toggle-all-btn:hover {
+            background: #5a6268;
+        }
+
+        .toggle-all-btn.showing {
+            background: #28a745;
+        }
+
+        .toggle-all-btn.showing:hover {
+            background: #218838;
         }
 
         .login-screen {
@@ -534,9 +552,7 @@
         let componentPrices = {};
         let containerMultipliers = [];
         let bcmFactors = {};
-
-        // Don't auto-load data on page load anymore - wait for login
-        // window.addEventListener('load', loadAllData);
+        let allCostsRevealed = false;
 
         async function loadAllData() {
             const status = document.getElementById('status');
@@ -897,6 +913,9 @@
                 }
             }
             
+            // Reset the toggle state for new results
+            allCostsRevealed = false;
+            
             showAllPricing({
                 recipe: recipe,
                 formulaCost: formulaCost,
@@ -917,14 +936,17 @@
                 pricingGridHTML += `
                     <div class="bcm-section">
                         <div class="bcm-title">${bcm} BCM Volume</div>
-                        <div class="base-cost">Base Cost: ${bcmAdjustedCost.toFixed(4)}</div>
+                        <div class="base-cost" onclick="toggleBaseCost(this)">
+                            <span class="hidden-text">Click to show base cost</span>
+                            <span class="base-cost-content">Base Cost: $${bcmAdjustedCost.toFixed(4)}</span>
+                        </div>
                         <div class="container-prices">
                             ${containerMultipliers.map(container => {
                                 const finalPrice = bcmAdjustedCost * container.multiplier;
                                 return `
                                     <div class="container-row">
                                         <span class="container-name">${container.name}</span>
-                                        <span class="container-price">${finalPrice.toFixed(2)}</span>
+                                        <span class="container-price">$${finalPrice.toFixed(2)}</span>
                                     </div>
                                 `;
                             }).join('')}
@@ -936,13 +958,19 @@
             resultsDiv.innerHTML = `
                 <div class="formula-info">
                     <h3>Recipe ${data.recipe.code} - ${data.pricingSeries}</h3>
-                    <div class="base-cost">Formula Base Cost: ${data.formulaCost.toFixed(4)}</div>
+                    <button class="toggle-all-btn" onclick="toggleAllBaseCosts()">
+                        <span id="toggleBtnText">Show All Base Costs</span>
+                    </button>
+                    <div class="base-cost" onclick="toggleBaseCost(this)">
+                        <span class="hidden-text">Click to show formula base cost</span>
+                        <span class="base-cost-content">Formula Base Cost: $${data.formulaCost.toFixed(4)}</span>
+                    </div>
                     <div class="formula-breakdown">
                         <h4>Component Breakdown:</h4>
                         ${data.componentBreakdown.map(comp => `
                             <div class="component-row">
                                 <span class="component-name">${comp.name} (${comp.percentage}%)</span>
-                                <span class="component-amount">${comp.price} × ${comp.percentage}% = ${comp.cost.toFixed(4)}</span>
+                                <span class="component-amount">$${comp.price.toFixed(2)} × ${comp.percentage}% = $${comp.cost.toFixed(4)}</span>
                             </div>
                         `).join('')}
                     </div>
@@ -969,16 +997,27 @@
         // Global function to toggle all base costs at once
         function toggleAllBaseCosts() {
             const allBaseCosts = document.querySelectorAll('.base-cost');
-            const firstElement = allBaseCosts[0];
-            const shouldReveal = !firstElement.classList.contains('revealed');
+            const toggleBtn = document.querySelector('.toggle-all-btn');
+            const toggleBtnText = document.getElementById('toggleBtnText');
+            
+            allCostsRevealed = !allCostsRevealed;
             
             allBaseCosts.forEach(element => {
-                if (shouldReveal) {
+                if (allCostsRevealed) {
                     element.classList.add('revealed');
                 } else {
                     element.classList.remove('revealed');
                 }
             });
+            
+            // Update button text and style
+            if (allCostsRevealed) {
+                toggleBtnText.textContent = 'Hide All Base Costs';
+                toggleBtn.classList.add('showing');
+            } else {
+                toggleBtnText.textContent = 'Show All Base Costs';
+                toggleBtn.classList.remove('showing');
+            }
         }
 
         document.addEventListener('click', function(e) {
