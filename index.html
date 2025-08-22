@@ -19,7 +19,7 @@
         }
 
         .calculator {
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
@@ -72,16 +72,51 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        .input-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+        .file-upload {
+            border: 2px dashed #e0e6ed;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
         }
 
-        @media (max-width: 480px) {
-            .input-group {
-                grid-template-columns: 1fr;
-            }
+        .file-upload:hover {
+            border-color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .file-upload.dragover {
+            border-color: #667eea;
+            background: #e3f2fd;
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-text {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .file-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .file-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .file-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
         }
 
         .calculate-btn {
@@ -102,14 +137,13 @@
             transform: translateY(-2px);
         }
 
-        .calculate-btn:active {
-            transform: translateY(0);
+        .calculate-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .results {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
             margin-top: 20px;
             display: none;
         }
@@ -122,61 +156,6 @@
         @keyframes slideIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-
-        .result-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .result-row:last-child {
-            border-bottom: none;
-            font-weight: 600;
-            font-size: 18px;
-            color: #2c3e50;
-        }
-
-        .result-label {
-            color: #6c757d;
-            font-size: 14px;
-        }
-
-        .result-value {
-            font-weight: 600;
-            color: #2c3e50;
-        }
-
-        .formula-breakdown {
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 15px;
-        }
-
-        .formula-breakdown h4 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .component-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 5px 0;
-            font-size: 13px;
-        }
-
-        .component-name {
-            color: #6c757d;
-        }
-
-        .component-amount {
-            color: #2c3e50;
-            font-weight: 500;
         }
 
         .pricing-grid {
@@ -206,10 +185,6 @@
             border-radius: 8px;
         }
 
-        .container-prices {
-            space-y: 12px;
-        }
-
         .container-row {
             display: flex;
             justify-content: space-between;
@@ -231,6 +206,38 @@
             font-weight: 600;
             color: #27ae60;
             font-size: 16px;
+        }
+
+        .error {
+            background: #ffe6e6;
+            color: #d63031;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .formula-info {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .formula-info h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .base-cost {
+            font-size: 18px;
+            font-weight: 600;
+            color: #e74c3c;
+            text-align: center;
+            margin: 10px 0;
         }
 
         .search-results {
@@ -274,19 +281,83 @@
             color: #636e72;
             margin-top: 2px;
         }
+
+        .formula-breakdown {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .formula-breakdown h4 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .component-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            font-size: 13px;
+        }
+
+        .component-name {
+            color: #6c757d;
+        }
+
+        .component-amount {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
     <div class="calculator">
         <div class="header">
             <h1>🎨 Color Recipe Price Calculator</h1>
-            <p>Estimate pricing based on hue code, BCM volume, and container type</p>
+            <p>Upload your Excel file and estimate pricing based on hue code and ink system</p>
         </div>
 
-        <form id="calculatorForm">
+        <!-- Excel File Upload -->
+        <div class="form-group">
+            <label for="excelFile">Upload Recipe Excel File</label>
+            <div class="file-upload" onclick="document.getElementById('excelFile').click()">
+                <input type="file" id="excelFile" accept=".xlsx,.xlsm,.xls">
+                <div class="file-upload-text">
+                    📄 Click to upload or drag and drop your Excel file<br>
+                    <small>Supports .xlsx, .xlsm, .xls files</small>
+                </div>
+            </div>
+            <div id="fileStatus" class="file-status" style="display: none;"></div>
+        </div>
+
+        <form id="calculatorForm" style="display: none;">
             <div class="form-group">
                 <label for="hueCode">Hue Code (Recipe Code)</label>
-                <input type="number" id="hueCode" placeholder="Enter recipe code (e.g., 189, 2078)" required>
+                <input type="text" id="hueCode" placeholder="Enter recipe code (e.g., 189, 2078)" required>
                 <div id="searchResults" class="search-results" style="display: none;"></div>
             </div>
 
@@ -298,30 +369,25 @@
                     <option value="direct">Direct/Indirect</option>
                 </select>
             </div>
+
+            <button type="submit" class="calculate-btn">Show All Pricing</button>
         </form>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            Processing Excel file...
+        </div>
 
         <div id="results" class="results"></div>
         <div id="error" class="error" style="display: none;"></div>
     </div>
 
-    <script>
-        // Recipe data from the Excel file
-        const recipes = [
-            { code: 2078, components: { black: 2.1, rubine: 2.7, transWhite: 91.5, violet: 3.7 } },
-            { code: 12, components: { warmRed: 0.2, yellow: 99.8 } },
-            { code: 21, components: { warmRed: 45.9, yellow: 54.1 } },
-            { code: 32, components: { rubine: 12.2, warmRed: 87.8 } },
-            { code: 72, components: { processBlue: 25, violet: 75 } },
-            { code: 100, components: { transWhite: 84, yellow: 16 } },
-            { code: 101, components: { transWhite: 75, yellow: 25 } },
-            { code: 102, components: { transWhite: 50, yellow: 50 } },
-            { code: 103, components: { black: 2.8, yellow: 97.2 } },
-            { code: 104, components: { black: 5.6, yellow: 94.4 } },
-            { code: 189, components: { extender: 90.3, rubine: 3.4, warmRed: 6.3 } }
-        ];
+    <!-- Include SheetJS library for Excel reading -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-        // Component pricing
-        const componentPrices = {
+    <script>
+        let recipes = [];
+        let componentPrices = {
             paper: {
                 extender: 1.61,
                 black: 1.48,
@@ -333,7 +399,8 @@
                 violet: 4.56,
                 warmRed: 3.21,
                 yellow: 2.58,
-                transWhite: 1.61 // Using extender price for trans white
+                transWhite: 1.61, // Using extender price
+                reflex: 3.25 // Using rubine price as fallback
             },
             direct: {
                 extender: 2.04,
@@ -346,31 +413,193 @@
                 violet: 4.27,
                 warmRed: 3.18,
                 yellow: 2.63,
-                transWhite: 2.04 // Using extender price for trans white
+                transWhite: 2.04, // Using extender price
+                reflex: 3.11 // Using rubine price as fallback
             }
         };
 
-        // Container multipliers
-        const containerMultipliers = {
-            '1.8': 'Loss Leader',
-            '2.2': 'Drum',
-            '2.4': 'Pail',
-            '2.6': 'Gallon'
-        };
+        // File upload handling
+        const fileInput = document.getElementById('excelFile');
+        const fileUpload = document.querySelector('.file-upload');
+        const fileStatus = document.getElementById('fileStatus');
+        const calculatorForm = document.getElementById('calculatorForm');
+        const loading = document.getElementById('loading');
+
+        fileInput.addEventListener('change', handleFileUpload);
+
+        // Drag and drop functionality
+        fileUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUpload.classList.add('dragover');
+        });
+
+        fileUpload.addEventListener('dragleave', () => {
+            fileUpload.classList.remove('dragover');
+        });
+
+        fileUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileUpload();
+            }
+        });
+
+        async function handleFileUpload() {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            loading.style.display = 'block';
+            fileStatus.style.display = 'none';
+            calculatorForm.style.display = 'none';
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+                
+                // Extract recipes from Formulas sheet
+                const formulasSheet = workbook.Sheets['Formulas'];
+                if (!formulasSheet) {
+                    throw new Error('Formulas sheet not found in Excel file');
+                }
+
+                recipes = extractRecipesFromSheet(formulasSheet);
+                
+                // Extract pricing from Pricing sheet
+                const pricingSheet = workbook.Sheets['Pricing'];
+                if (pricingSheet) {
+                    updateComponentPricing(pricingSheet);
+                }
+
+                // Show success message
+                fileStatus.className = 'file-status success';
+                fileStatus.textContent = `✅ Loaded ${recipes.length} recipes from ${file.name}`;
+                fileStatus.style.display = 'block';
+                
+                // Show calculator form
+                calculatorForm.style.display = 'block';
+                
+            } catch (error) {
+                fileStatus.className = 'file-status error';
+                fileStatus.textContent = `❌ Error reading file: ${error.message}`;
+                fileStatus.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function extractRecipesFromSheet(sheet) {
+            const range = XLSX.utils.decode_range(sheet['!ref']);
+            const extractedRecipes = [];
+            
+            // Component mapping from Excel headers
+            const componentMapping = {
+                'BLACK': 'black',
+                'GREEN': 'green',
+                'PROCESS BLUE': 'processBlue',
+                'PURPLE': 'purple',
+                'REFLEX': 'reflex',
+                'RHODAMINE': 'rhodamine',
+                'RUBINE': 'rubine',
+                'TRANS WHITE': 'transWhite',
+                'VIOLET': 'violet',
+                'WARM RED': 'warmRed',
+                'YELLOW': 'yellow'
+            };
+
+            // Get component headers from row 2 (index 1)
+            const headers = [];
+            for (let col = 3; col <= 13; col++) { // Columns D through N
+                const cell = sheet[XLSX.utils.encode_cell({r: 1, c: col})];
+                if (cell && cell.v) {
+                    headers[col - 3] = componentMapping[cell.v] || cell.v.toLowerCase();
+                }
+            }
+
+            // Extract recipes starting from row 3 (index 2)
+            for (let row = 2; row <= range.e.r; row++) {
+                const recipeCodeCell = sheet[XLSX.utils.encode_cell({r: row, c: 0})]; // Column A
+                const totalCell = sheet[XLSX.utils.encode_cell({r: row, c: 2})]; // Column C
+                
+                if (recipeCodeCell?.v && totalCell?.v === 100) {
+                    const recipeCode = recipeCodeCell.v;
+                    const components = {};
+                    
+                    // Get component percentages
+                    for (let col = 3; col <= 13; col++) {
+                        const componentCell = sheet[XLSX.utils.encode_cell({r: row, c: col})];
+                        if (componentCell?.v && componentCell.v > 0) {
+                            const componentName = headers[col - 3];
+                            if (componentName) {
+                                components[componentName] = componentCell.v;
+                            }
+                        }
+                    }
+                    
+                    if (Object.keys(components).length > 0) {
+                        extractedRecipes.push({
+                            code: recipeCode,
+                            components: components
+                        });
+                    }
+                }
+            }
+            
+            return extractedRecipes;
+        }
+
+        function updateComponentPricing(sheet) {
+            const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+            
+            data.forEach((row, index) => {
+                if (index > 0 && row.length >= 3) { // Skip header row
+                    const componentName = row[0];
+                    const paperPrice = row[1];
+                    const directPrice = row[2];
+                    
+                    if (componentName && paperPrice && directPrice) {
+                        const normalizedName = componentName.toLowerCase().replace(/\s+/g, '');
+                        
+                        // Map component names
+                        const nameMapping = {
+                            'extender': 'extender',
+                            'black': 'black',
+                            'green': 'green',
+                            'pro-blue': 'processBlue',
+                            'processblue': 'processBlue',
+                            'purple': 'purple',
+                            'rhodamine': 'rhodamine',
+                            'rubine': 'rubine',
+                            'violet': 'violet',
+                            'warmred': 'warmRed',
+                            'yellow': 'yellow'
+                        };
+                        
+                        const mappedName = nameMapping[normalizedName];
+                        if (mappedName) {
+                            componentPrices.paper[mappedName] = paperPrice;
+                            componentPrices.direct[mappedName] = directPrice;
+                        }
+                    }
+                }
+            });
+        }
 
         // Search functionality
         document.getElementById('hueCode').addEventListener('input', function() {
             const searchValue = this.value.toLowerCase();
             const searchResults = document.getElementById('searchResults');
             
-            if (searchValue.length > 0) {
+            if (searchValue.length > 0 && recipes.length > 0) {
                 const matches = recipes.filter(recipe => 
                     recipe.code.toString().includes(searchValue)
-                );
+                ).slice(0, 10); // Limit to 10 results
                 
                 if (matches.length > 0) {
                     searchResults.innerHTML = `
-                        <h4>Available Recipes:</h4>
+                        <h4>Found ${matches.length} recipes:</h4>
                         ${matches.map(recipe => `
                             <div class="recipe-item" onclick="selectRecipe(${recipe.code})">
                                 <div class="recipe-code">Code: ${recipe.code}</div>
@@ -400,7 +629,7 @@
         });
 
         function calculatePrice() {
-            const hueCode = parseInt(document.getElementById('hueCode').value);
+            const hueCode = document.getElementById('hueCode').value;
             const pricingSeries = document.getElementById('pricingSeries').value;
             
             const errorDiv = document.getElementById('error');
@@ -415,11 +644,16 @@
                 showError('Please select both a hue code and ink system.');
                 return;
             }
+
+            if (recipes.length === 0) {
+                showError('Please upload an Excel file first.');
+                return;
+            }
             
             // Find the recipe
-            const recipe = recipes.find(r => r.code === hueCode);
+            const recipe = recipes.find(r => r.code.toString() === hueCode.toString());
             if (!recipe) {
-                showError(`Recipe code ${hueCode} not found. Available codes: ${recipes.map(r => r.code).join(', ')}`);
+                showError(`Recipe code ${hueCode} not found in the uploaded file.`);
                 return;
             }
             
@@ -441,6 +675,8 @@
                         price: componentPrice,
                         cost: cost
                     });
+                } else {
+                    console.warn(`Price not found for component: ${component}`);
                 }
             }
             
@@ -452,7 +688,7 @@
                 pricingSeries: pricingSeries === 'paper' ? 'Paper Series' : 'Direct/Indirect'
             });
         }
-        
+
         function showAllPricing(data) {
             const resultsDiv = document.getElementById('results');
             
@@ -480,14 +716,14 @@
                 pricingGridHTML += `
                     <div class="bcm-section">
                         <div class="bcm-title">${bcm} BCM Volume</div>
-                        <div class="base-cost">Base Cost: ${bcmAdjustedCost.toFixed(4)}</div>
+                        <div class="base-cost">Base Cost: $${bcmAdjustedCost.toFixed(4)}</div>
                         <div class="container-prices">
                             ${containers.map(container => {
                                 const finalPrice = bcmAdjustedCost * container.multiplier;
                                 return `
                                     <div class="container-row">
                                         <span class="container-name">${container.name}</span>
-                                        <span class="container-price">${finalPrice.toFixed(2)}</span>
+                                        <span class="container-price">$${finalPrice.toFixed(2)}</span>
                                     </div>
                                 `;
                             }).join('')}
@@ -499,13 +735,13 @@
             resultsDiv.innerHTML = `
                 <div class="formula-info">
                     <h3>Recipe ${data.recipe.code} - ${data.pricingSeries}</h3>
-                    <div class="base-cost">Formula Base Cost: ${data.formulaCost.toFixed(4)}</div>
+                    <div class="base-cost">Formula Base Cost: $${data.formulaCost.toFixed(4)}</div>
                     <div class="formula-breakdown">
                         <h4>Component Breakdown:</h4>
                         ${data.componentBreakdown.map(comp => `
                             <div class="component-row">
                                 <span class="component-name">${comp.name} (${comp.percentage}%)</span>
-                                <span class="component-amount">${comp.price} × ${comp.percentage}% = ${comp.cost.toFixed(4)}</span>
+                                <span class="component-amount">$${comp.price} × ${comp.percentage}% = $${comp.cost.toFixed(4)}</span>
                             </div>
                         `).join('')}
                     </div>
@@ -518,7 +754,7 @@
             
             resultsDiv.classList.add('show');
         }
-        
+
         function showError(message) {
             const errorDiv = document.getElementById('error');
             errorDiv.textContent = message;
