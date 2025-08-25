@@ -312,6 +312,120 @@
             font-size: 14px;
         }
 
+        /* PIN Pad Modal */
+        .pin-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pin-modal.active {
+            display: flex;
+        }
+
+        .pin-box {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 350px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .pin-box h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .pin-display {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .pin-digit {
+            width: 50px;
+            height: 60px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .pin-digit.filled {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .pin-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .pin-btn {
+            padding: 15px;
+            font-size: 20px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .pin-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .pin-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .pin-clear, .pin-cancel {
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .pin-clear {
+            background: #ffc107;
+            color: white;
+        }
+
+        .pin-cancel {
+            background: #dc3545;
+            color: white;
+        }
+
+        .pin-error {
+            color: #dc3545;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
         .search-results {
             background: #e8f4f8;
             border: 1px solid #74b9ff;
@@ -454,39 +568,6 @@
         .file-input {
             display: none;
         }
-
-        .bcm-adjustment-settings {
-            background: #f0f8ff;
-            border: 1px solid #74b9ff;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-        .bcm-adjustment-settings h4 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .adjustment-input {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 5px 0;
-            font-size: 13px;
-        }
-
-        .adjustment-input label {
-            flex: 1;
-            margin: 0;
-        }
-
-        .adjustment-input input {
-            width: 80px;
-            padding: 5px;
-            font-size: 13px;
-        }
     </style>
 </head>
 <body>
@@ -498,6 +579,36 @@
             <input type="password" id="passwordInput" placeholder="Enter password" autocomplete="off">
             <button onclick="checkPassword()">Access Calculator</button>
             <div id="loginError" class="login-error" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- PIN Modal for Base Costs -->
+    <div id="pinModal" class="pin-modal">
+        <div class="pin-box">
+            <h3>🔒 Enter PIN to View Base Costs</h3>
+            <div class="pin-display">
+                <div class="pin-digit" id="pin1"></div>
+                <div class="pin-digit" id="pin2"></div>
+                <div class="pin-digit" id="pin3"></div>
+                <div class="pin-digit" id="pin4"></div>
+            </div>
+            <div class="pin-pad">
+                <button class="pin-btn" onclick="addPinDigit(1)">1</button>
+                <button class="pin-btn" onclick="addPinDigit(2)">2</button>
+                <button class="pin-btn" onclick="addPinDigit(3)">3</button>
+                <button class="pin-btn" onclick="addPinDigit(4)">4</button>
+                <button class="pin-btn" onclick="addPinDigit(5)">5</button>
+                <button class="pin-btn" onclick="addPinDigit(6)">6</button>
+                <button class="pin-btn" onclick="addPinDigit(7)">7</button>
+                <button class="pin-btn" onclick="addPinDigit(8)">8</button>
+                <button class="pin-btn" onclick="addPinDigit(9)">9</button>
+                <button class="pin-btn" style="grid-column: 2;" onclick="addPinDigit(0)">0</button>
+            </div>
+            <div class="pin-actions">
+                <button class="pin-clear" onclick="clearPin()">Clear</button>
+                <button class="pin-cancel" onclick="cancelPin()">Cancel</button>
+            </div>
+            <div id="pinError" class="pin-error" style="display: none;"></div>
         </div>
     </div>
 
@@ -536,8 +647,6 @@
                 <label for="pricingSeries">Ink System</label>
                 <select id="pricingSeries" required>
                     <option value="">Select Ink System</option>
-                    <option value="paper">Paper Series</option>
-                    <option value="direct">Direct/Indirect</option>
                 </select>
             </div>
 
@@ -556,6 +665,7 @@
     <script>
         // Password protection
         const CORRECT_PASSWORD = "colorpro2025"; // Change this to your desired password
+        const CORRECT_PIN = "1234"; // Change this to your desired 4-digit PIN
         
         function checkPassword() {
             const input = document.getElementById('passwordInput');
@@ -581,11 +691,76 @@
             }
         });
 
+        // PIN functionality
+        let currentPin = '';
+        let pinCallback = null;
+        
+        function requestPin(callback) {
+            currentPin = '';
+            pinCallback = callback;
+            updatePinDisplay();
+            document.getElementById('pinModal').classList.add('active');
+            document.getElementById('pinError').style.display = 'none';
+        }
+        
+        function addPinDigit(digit) {
+            if (currentPin.length < 4) {
+                currentPin += digit;
+                updatePinDisplay();
+                
+                if (currentPin.length === 4) {
+                    // Auto-check when 4 digits entered
+                    setTimeout(checkPin, 200);
+                }
+            }
+        }
+        
+        function updatePinDisplay() {
+            for (let i = 1; i <= 4; i++) {
+                const digitEl = document.getElementById(`pin${i}`);
+                if (i <= currentPin.length) {
+                    digitEl.textContent = '•';
+                    digitEl.classList.add('filled');
+                } else {
+                    digitEl.textContent = '';
+                    digitEl.classList.remove('filled');
+                }
+            }
+        }
+        
+        function checkPin() {
+            if (currentPin === CORRECT_PIN) {
+                document.getElementById('pinModal').classList.remove('active');
+                if (pinCallback) {
+                    pinCallback();
+                }
+            } else {
+                document.getElementById('pinError').textContent = 'Incorrect PIN. Please try again.';
+                document.getElementById('pinError').style.display = 'block';
+                currentPin = '';
+                updatePinDisplay();
+            }
+        }
+        
+        function clearPin() {
+            currentPin = '';
+            updatePinDisplay();
+            document.getElementById('pinError').style.display = 'none';
+        }
+        
+        function cancelPin() {
+            document.getElementById('pinModal').classList.remove('active');
+            currentPin = '';
+            pinCallback = null;
+        }
+
         let recipes = [];
         let componentPrices = {};
         let containerMultipliers = [];
         let bcmAdjustments = {};
+        let inkSystems = [];
         let allCostsRevealed = false;
+        let pinAuthenticated = false;
 
         async function loadAllData() {
             const status = document.getElementById('status');
@@ -597,11 +772,12 @@
                 status.innerHTML = '<div class="spinner"></div>Loading data files...';
 
                 // Load all data files in parallel
-                const [excelResponse, pricesResponse, containersResponse, bcmResponse] = await Promise.all([
+                const [excelResponse, pricesResponse, containersResponse, bcmResponse, systemsResponse] = await Promise.all([
                     fetch('./Recipe Formula Price Estimation.xlsm'),
                     fetch('./component-prices.json'),
                     fetch('./container-multipliers.json'),
-                    fetch('./bcm-adjustments.json').catch(() => null)
+                    fetch('./bcm-adjustments.json').catch(() => null),
+                    fetch('./ink-systems.json').catch(() => null)
                 ]);
 
                 // Check if Excel file exists
@@ -609,26 +785,41 @@
                     throw new Error('Excel file not found');
                 }
 
-                // Load JSON files (with fallbacks if they don't exist)
+                // Load component prices
                 if (pricesResponse.ok) {
                     componentPrices = await pricesResponse.json();
                 } else {
-                    // Fallback to default pricing
                     componentPrices = getDefaultComponentPrices();
                 }
+
+                // Load ink systems configuration
+                if (systemsResponse && systemsResponse.ok) {
+                    const systemsData = await systemsResponse.json();
+                    inkSystems = systemsData.systems || Object.keys(componentPrices).map(key => ({
+                        value: key,
+                        label: key === 'paper' ? 'Paper Series' : 'Direct/Indirect'
+                    }));
+                } else {
+                    // Use systems from component prices
+                    inkSystems = Object.keys(componentPrices).map(key => ({
+                        value: key,
+                        label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim()
+                    }));
+                }
+
+                // Populate ink systems dropdown
+                populateInkSystems();
 
                 if (containersResponse.ok) {
                     containerMultipliers = await containersResponse.json();
                 } else {
-                    // Fallback to default containers
                     containerMultipliers = getDefaultContainers();
                 }
 
-                // Load BCM adjustments (new file) or use defaults
+                // Load BCM adjustments
                 if (bcmResponse && bcmResponse.ok) {
                     bcmAdjustments = await bcmResponse.json();
                 } else {
-                    // Default BCM adjustments (percentage reduction from 2BCM baseline)
                     bcmAdjustments = getDefaultBcmAdjustments();
                 }
 
@@ -657,10 +848,26 @@
                 componentPrices = getDefaultComponentPrices();
                 containerMultipliers = getDefaultContainers();
                 bcmAdjustments = getDefaultBcmAdjustments();
+                inkSystems = Object.keys(componentPrices).map(key => ({
+                    value: key,
+                    label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim()
+                }));
                 
-                // Set up manual upload
+                populateInkSystems();
                 setupManualUpload();
             }
+        }
+
+        function populateInkSystems() {
+            const select = document.getElementById('pricingSeries');
+            select.innerHTML = '<option value="">Select Ink System</option>';
+            
+            inkSystems.forEach(system => {
+                const option = document.createElement('option');
+                option.value = system.value;
+                option.textContent = system.label;
+                select.appendChild(option);
+            });
         }
 
         function getDefaultComponentPrices() {
@@ -706,12 +913,11 @@
         }
 
         function getDefaultBcmAdjustments() {
-            // Percentage of pigments to keep (100% = no reduction)
             return {
-                "2": 100,  // 2BCM = 100% (baseline, no reduction)
-                "3": 85,   // 3BCM = 85% of pigments (15% reduction)
-                "4": 70,   // 4BCM = 70% of pigments (30% reduction)  
-                "5": 60    // 5BCM = 60% of pigments (40% reduction)
+                "2": 100,
+                "3": 85,
+                "4": 70,
+                "5": 60
             };
         }
 
@@ -748,7 +954,6 @@
         }
 
         async function processExcelFile(workbook) {
-            // Extract recipes from Formulas sheet
             const formulasSheet = workbook.Sheets['Formulas'];
             if (!formulasSheet) {
                 throw new Error('Formulas sheet not found in Excel file');
@@ -756,7 +961,6 @@
 
             recipes = extractRecipesFromSheet(formulasSheet);
             
-            // Extract pricing from Pricing sheet
             const pricingSheet = workbook.Sheets['Pricing'];
             if (pricingSheet) {
                 updateComponentPricing(pricingSheet);
@@ -771,7 +975,6 @@
             const range = XLSX.utils.decode_range(sheet['!ref']);
             const extractedRecipes = [];
             
-            // Component mapping from Excel headers
             const componentMapping = {
                 'BLACK': 'black',
                 'GREEN': 'green',
@@ -786,7 +989,6 @@
                 'YELLOW': 'yellow'
             };
 
-            // Get component headers from row 2 (index 1)
             const headers = [];
             for (let col = 3; col <= 13; col++) {
                 const cell = sheet[XLSX.utils.encode_cell({r: 1, c: col})];
@@ -795,7 +997,6 @@
                 }
             }
 
-            // Extract recipes starting from row 3 (index 2)
             for (let row = 2; row <= range.e.r; row++) {
                 const recipeCodeCell = sheet[XLSX.utils.encode_cell({r: row, c: 0})];
                 const totalCell = sheet[XLSX.utils.encode_cell({r: row, c: 2})];
@@ -804,7 +1005,6 @@
                     const recipeCode = recipeCodeCell.v;
                     const components = {};
                     
-                    // Get component percentages
                     for (let col = 3; col <= 13; col++) {
                         const componentCell = sheet[XLSX.utils.encode_cell({r: row, c: col})];
                         if (componentCell?.v && componentCell.v > 0) {
@@ -830,91 +1030,100 @@
         function updateComponentPricing(sheet) {
             const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
             
-            data.forEach((row, index) => {
-                if (index > 0 && row.length >= 3) {
-                    const componentName = row[0];
-                    const paperPrice = row[1];
-                    const directPrice = row[2];
-                    
-                    if (componentName && paperPrice && directPrice) {
-                        const normalizedName = componentName.toLowerCase().replace(/\s+/g, '');
+            // Dynamically extract all pricing columns
+            if (data.length > 0) {
+                const headers = data[0];
+                
+                // Find all system columns (skip first column which is component name)
+                for (let col = 1; col < headers.length; col++) {
+                    const systemName = headers[col];
+                    if (systemName) {
+                        const normalizedSystemName = systemName.toLowerCase().replace(/\s+/g, '');
                         
-                        const nameMapping = {
-                            'extender': 'extender',
-                            'black': 'black',
-                            'green': 'green',
-                            'pro-blue': 'processBlue',
-                            'processblue': 'processBlue',
-                            'purple': 'purple',
-                            'rhodamine': 'rhodamine',
-                            'rubine': 'rubine',
-                            'violet': 'violet',
-                            'warmred': 'warmRed',
-                            'yellow': 'yellow'
-                        };
-                        
-                        const mappedName = nameMapping[normalizedName];
-                        if (mappedName) {
-                            componentPrices.paper[mappedName] = paperPrice;
-                            componentPrices.direct[mappedName] = directPrice;
+                        // Initialize system if it doesn't exist
+                        if (!componentPrices[normalizedSystemName]) {
+                            componentPrices[normalizedSystemName] = {};
                         }
+                        
+                        // Extract prices for this system
+                        data.forEach((row, index) => {
+                            if (index > 0 && row.length > col) {
+                                const componentName = row[0];
+                                const price = row[col];
+                                
+                                if (componentName && price) {
+                                    const normalizedComponentName = componentName.toLowerCase().replace(/\s+/g, '');
+                                    
+                                    const nameMapping = {
+                                        'extender': 'extender',
+                                        'black': 'black',
+                                        'green': 'green',
+                                        'pro-blue': 'processBlue',
+                                        'processblue': 'processBlue',
+                                        'purple': 'purple',
+                                        'rhodamine': 'rhodamine',
+                                        'rubine': 'rubine',
+                                        'violet': 'violet',
+                                        'warmred': 'warmRed',
+                                        'yellow': 'yellow',
+                                        'transwhite': 'transWhite',
+                                        'reflex': 'reflex'
+                                    };
+                                    
+                                    const mappedName = nameMapping[normalizedComponentName];
+                                    if (mappedName) {
+                                        componentPrices[normalizedSystemName][mappedName] = price;
+                                    }
+                                }
+                            }
+                        });
                     }
                 }
-            });
+            }
         }
 
-        // Adjust formula based on BCM level
         function adjustFormulaForBCM(originalComponents, bcmLevel, pricingSeries) {
             const adjustmentPercentage = bcmAdjustments[bcmLevel] || 100;
             const adjustedComponents = {};
             
-            // If it's already at 100% (2BCM), return original
             if (adjustmentPercentage === 100) {
                 return originalComponents;
             }
             
-            // Calculate the reduction multiplier
             const multiplier = adjustmentPercentage / 100;
-            
-            // Check if formula already has extender
             const hasExtender = originalComponents.extender || originalComponents.transWhite;
             let totalReduction = 0;
             
-            // Reduce all non-extender components
             for (const [component, percentage] of Object.entries(originalComponents)) {
                 if (component !== 'extender' && component !== 'transWhite') {
                     const newPercentage = percentage * multiplier;
                     adjustedComponents[component] = newPercentage;
                     totalReduction += (percentage - newPercentage);
                 } else {
-                    // Keep extender/transWhite for now
                     adjustedComponents[component] = percentage;
                 }
             }
             
-            // Add the reduction amount to extender/transWhite
             if (hasExtender) {
-                // Add to existing extender
                 if (adjustedComponents.extender) {
                     adjustedComponents.extender += totalReduction;
                 } else if (adjustedComponents.transWhite) {
                     adjustedComponents.transWhite += totalReduction;
                 }
             } else {
-                // Add new extender
                 adjustedComponents.extender = totalReduction;
             }
-            
-            // Verify total is still 100%
-            const total = Object.values(adjustedComponents).reduce((sum, val) => sum + val, 0);
-            console.log(`BCM ${bcmLevel} adjustment: Total = ${total}%`, adjustedComponents);
             
             return adjustedComponents;
         }
 
-        // Calculate formula cost
         function calculateFormulaCost(components, pricingSeries) {
             const prices = componentPrices[pricingSeries];
+            if (!prices) {
+                console.error(`No prices found for system: ${pricingSeries}`);
+                return { cost: 0, breakdown: [] };
+            }
+            
             let cost = 0;
             const breakdown = [];
             
@@ -1002,19 +1211,23 @@
                 return;
             }
             
-            // Calculate base formula cost (2BCM)
             const baseFormula = adjustFormulaForBCM(recipe.components, "2", pricingSeries);
             const baseCalc = calculateFormulaCost(baseFormula, pricingSeries);
             
-            // Reset the toggle state for new results
+            // Reset states for new results
             allCostsRevealed = false;
+            pinAuthenticated = false;
+            
+            // Find the display name for the selected system
+            const selectedSystem = inkSystems.find(s => s.value === pricingSeries);
+            const systemLabel = selectedSystem ? selectedSystem.label : pricingSeries;
             
             showAllPricing({
                 recipe: recipe,
                 baseFormula: baseFormula,
                 baseCost: baseCalc.cost,
                 baseBreakdown: baseCalc.breakdown,
-                pricingSeries: pricingSeries === 'paper' ? 'Paper Series' : 'Direct/Indirect',
+                pricingSeries: systemLabel,
                 seriesKey: pricingSeries
             });
         }
@@ -1022,11 +1235,9 @@
         function showAllPricing(data) {
             const resultsDiv = document.getElementById('results');
             
-            // Generate pricing grid for all BCM volumes
             let pricingGridHTML = '';
             
             Object.keys(bcmAdjustments).forEach(bcm => {
-                // Adjust formula for this BCM level
                 const adjustedFormula = adjustFormulaForBCM(data.recipe.components, bcm, data.seriesKey);
                 const calc = calculateFormulaCost(adjustedFormula, data.seriesKey);
                 
@@ -1065,7 +1276,7 @@
             resultsDiv.innerHTML = `
                 <div class="formula-info">
                     <h3>Recipe ${data.recipe.code} - ${data.pricingSeries}</h3>
-                    <button class="toggle-all-btn" onclick="toggleAllBaseCosts()">
+                    <button class="toggle-all-btn" onclick="toggleAllBaseCostsWithPin()">
                         <span id="toggleBtnText">Show All Base Costs</span>
                     </button>
                     <div class="formula-breakdown">
@@ -1094,10 +1305,27 @@
         }
 
         function toggleBaseCost(element) {
-            element.classList.toggle('revealed');
+            if (!element.classList.contains('revealed') && !pinAuthenticated) {
+                requestPin(() => {
+                    pinAuthenticated = true;
+                    element.classList.add('revealed');
+                });
+            } else if (pinAuthenticated) {
+                element.classList.toggle('revealed');
+            }
         }
 
-        // Global function to toggle all base costs at once
+        function toggleAllBaseCostsWithPin() {
+            if (!pinAuthenticated && !allCostsRevealed) {
+                requestPin(() => {
+                    pinAuthenticated = true;
+                    toggleAllBaseCosts();
+                });
+            } else {
+                toggleAllBaseCosts();
+            }
+        }
+
         function toggleAllBaseCosts() {
             const allBaseCosts = document.querySelectorAll('.base-cost');
             const toggleBtn = document.querySelector('.toggle-all-btn');
@@ -1113,13 +1341,13 @@
                 }
             });
             
-            // Update button text and style
             if (allCostsRevealed) {
                 toggleBtnText.textContent = 'Hide All Base Costs';
                 toggleBtn.classList.add('showing');
             } else {
                 toggleBtnText.textContent = 'Show All Base Costs';
                 toggleBtn.classList.remove('showing');
+                pinAuthenticated = false; // Reset PIN auth when hiding
             }
         }
 
