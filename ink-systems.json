@@ -3,6 +3,6 @@
     { "value": "paper", "label": "Paper Series" },
     { "value": "direct", "label": "Direct/Indirect" },
     { "value": "film", "label": "Lamination Films" },
-    { "value": "DM", "label": "Dura-Max Paper/Film" }
+    { "value": "dm", "label": "Dura-Max Paper/Film" }
   ]
 }
