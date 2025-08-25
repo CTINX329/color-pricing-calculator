@@ -1,0 +1,6 @@
+{
+  "systems": [
+    { "value": "paper", "label": "Paper Series" },
+    { "value": "direct", "label": "Direct/Indirect" },
+  ]
+}
