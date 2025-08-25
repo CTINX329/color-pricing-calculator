@@ -1151,14 +1151,14 @@
             
             if (searchValue.length > 0 && recipes.length > 0) {
                 const matches = recipes.filter(recipe => 
-                    recipe.code.toString().includes(searchValue)
+                    recipe.code.toString().toLowerCase().includes(searchValue)
                 ).slice(0, 10);
                 
                 if (matches.length > 0) {
                     searchResults.innerHTML = `
                         <h4>Found ${matches.length} recipes:</h4>
                         ${matches.map(recipe => `
-                            <div class="recipe-item" onclick="selectRecipe(${recipe.code})">
+                            <div class="recipe-item" onclick="selectRecipe('${recipe.code.toString().replace(/'/g, "\\'")}')">
                                 <div class="recipe-code">Code: ${recipe.code}</div>
                                 <div class="recipe-components">
                                     Components: ${Object.keys(recipe.components).join(', ')}
