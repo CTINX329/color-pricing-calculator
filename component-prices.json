@@ -26,5 +26,33 @@
     "yellow": 2.63,
     "transWhite": 2.04,
     "reflex": 3.11
+  },
+    "FILM": {
+    "extender": 2.00,
+    "black": 1.48,
+    "green": 4.04,
+    "processBlue": 2.78,
+    "purple": 11.81,
+    "rhodamine": 10.72,
+    "rubine": 3.25,
+    "violet": 4.56,
+    "warmRed": 3.21,
+    "yellow": 2.58,
+    "transWhite": 1.61,
+    "reflex": 3.25
+  },
+    "DM": {
+    "extender": 2.25,
+    "black": 1.8,
+    "green": 3.83,
+    "processBlue": 2.86,
+    "purple": 10.12,
+    "rhodamine": 9.23,
+    "rubine": 3.11,
+    "violet": 4.27,
+    "warmRed": 3.18,
+    "yellow": 2.63,
+    "transWhite": 2.04,
+    "reflex": 3.11
   }
 }
