@@ -27,7 +27,7 @@
     "transWhite": 2.04,
     "reflex": 3.11
   },
-    "FILM": {
+    "film": {
     "extender": 2.00,
     "black": 1.48,
     "green": 4.04,
@@ -41,7 +41,7 @@
     "transWhite": 1.61,
     "reflex": 3.25
   },
-    "DM": {
+    "dm": {
     "extender": 2.25,
     "black": 1.8,
     "green": 3.83,
